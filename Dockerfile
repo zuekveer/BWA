@@ -24,7 +24,7 @@ WORKDIR /root/
 # Copy the pre-built binary from the previous stage
 COPY --from=builder /app/app .
 
-# Expose port 8080 to the outside world
+# Expose port 8088 to the outside world
 EXPOSE 8088
 
 # Command to run the executable

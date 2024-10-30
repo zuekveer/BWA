@@ -1,26 +1,32 @@
-version: '3'
 
 services:
-  app-calendar:
+  app:
     build: .
     env_file:
       - .env
     ports:
       - "8088:8088"
     networks:
-      - calendar-ihp
+      - zkr-network
     restart: on-failure
     depends_on:
-      - pg-16
+      - db
 
-  pg-16:
+  db:
     image: postgres:16
     environment:
       - "POSTGRES_DB=${PG_DATABASE}"
       - "POSTGRES_USER=${PG_USER}"
       - "POSTGRES_PASSWORD=${PG_PASSWORD}"
     ports:
-      - "5432:5432"
+      - "5434:5434"
+    networks:
+      - zkr-network
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
+
+
+networks:
+  zkr-network:
+    driver: bridge
