@@ -25,3 +25,5 @@ go.work.sum
 .env
 .idea
 .vscode
+.tools
+READMEexample.md

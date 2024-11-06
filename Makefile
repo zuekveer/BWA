@@ -1,3 +1,11 @@
+-include .env
+current_dir := $(dir $(abspath $(firstword $(MAKEFILE_LIST))))
+
+# Tools.
+export TOOLS=$(current_dir)/tools
+export TOOLS_BIN=$(TOOLS)/bin
+export PATH := $(TOOLS_BIN):$(PATH)
+
 .PHONY: build
 build:
 	@docker compose build
@@ -28,8 +36,23 @@ clean:
 
 .PHONY: logs-app
 logs-app:
-	@docker logs app-calendar
+	@docker logs bwa-app-1
 
-.PHONY: logs-pg
-logs-pg:
-	@docker logs pg-16
+.PHONY: logs-db
+logs-db:
+	@docker logs bwa-db-1
+
+.PHONY:
+lint:
+	$(TOOLS_BIN)/golangci-lint run
+
+.PHONY:
+migrate: install-tools
+#	@envsubst < $(TOOLS_BIN)/goose -dir ./migrations postgres "$(DB_URI)" up -v
+	$(TOOLS_BIN)/goose -dir ./migrations postgres "$(DB_URI)" up -v
+.PHONY:
+install-tools: export GOBIN=$(TOOLS_BIN)
+install-tools:
+	@mkdir -p $(TOOLS_BIN)
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.54.2
+	go install github.com/pressly/goose/v3/cmd/goose@v3.10.0

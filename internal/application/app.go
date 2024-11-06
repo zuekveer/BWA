@@ -10,6 +10,7 @@ import (
 	"github.com/zuekveer/BWA/internal/databases"
 	"github.com/zuekveer/BWA/internal/logger"
 	"github.com/zuekveer/BWA/internal/transport/http"
+	//"github.com/zuekveer/BWA/internal/service"
 )
 
 const serverShutdownTimeout = 1 * time.Minute
@@ -23,7 +24,7 @@ func Run(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to create logger: %w", err)
 	}
-	_, close, err := databases.NewDB(&cfg.DB, log)
+	db, close, err := databases.NewDB(&cfg.DB, log)
 	if err != nil {
 		return fmt.Errorf("failed to create databases: %w", err)
 	}
@@ -34,7 +35,8 @@ func Run(ctx context.Context) error {
 		}
 	}()
 
-	hs := handlers.NewHandlers()
+	eventDomain := buildEventDomain(db)
+	hs := handlers.NewHandlers(eventDomain.events, log)
 	stopHTTPServer, err := http.ServeHTTP(&cfg.HTTP, hs)
 	if err != nil {
 		return fmt.Errorf("failed to start HTTP server: %w", err)

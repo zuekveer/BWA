@@ -15,16 +15,34 @@ services:
   db:
     image: postgres:16
     environment:
-      - "POSTGRES_DB=${PG_DATABASE}"
-      - "POSTGRES_USER=${PG_USER}"
-      - "POSTGRES_PASSWORD=${PG_PASSWORD}"
+      - "POSTGRES_DB=${DB_DATABASE}"
+      - "POSTGRES_USER=${DB_USER}"
+      - "POSTGRES_PASSWORD=${DB_PASSWORD}"
     ports:
-      - "5434:5434"
+      - "${DB_HOST_PORT}:${DB_PORT}"
+#TODO:add volume
+#    volumes:
+#      - ./pgdata:/var/lib/postgresql/data  # Persist data
     networks:
       - zkr-network
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
+
+  migration:
+    image: migrations
+    build:
+      context: .
+      dockerfile: migration.Dockerfile
+    environment:
+      GOOSE_DRIVER: postgres
+      GOOSE_DBSTRING: "host=db user=${DB_USER} password=${DB_PASSWORD} dbname=${DB_DATABASE} sslmode=disable"
+    command: "/opt/bin/goose -dir /opt/go/app/db/migrations up"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - zkr-network
 
 
 networks:
