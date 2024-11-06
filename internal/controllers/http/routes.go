@@ -1,19 +1,50 @@
-// http/http.go
 package http
 
 import (
-	"github.com/go-chi/chi"
+	"net/http"
+
 	"github.com/go-chi/chi/middleware"
-	"github.com/zuekveer/BWA/internal/controllers/handlers"
+	"github.com/go-chi/chi/v5"
+	"github.com/zuekveer/BWA/internal/logger"
+	"github.com/zuekveer/BWA/internal/service"
 )
 
-func NewHandlers() *chi.Mux {
+type handlers struct {
+	service *service.EventService
+	l       logger.Logger
+}
+
+// NewHandlers initializes the router and registers routes
+func NewHandlers(events *service.EventService, log logger.Logger) *chi.Mux {
+	h := handlers{
+		service: events,
+		l:       log,
+	}
 	r := chi.NewMux()
+	h.build(r)
+	return r
+}
+
+// build sets up routes for the handlers
+func (h *handlers) build(r chi.Router) {
+	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	h := handlers.NewHandler()
+	// Welcome endpoint at root
+	r.Get("/", h.welcome)
 
-	r.Get("/", h.Welcome)
+	// Event-related endpoints
+	r.Route("/api/v1/events", func(r chi.Router) {
+		r.Post("/", h.create)
+		r.Patch("/{id}", h.update)
+		r.Get("/", h.getEvents)
+	})
+}
 
-	return r
+// welcome serves a welcome message
+func (h *handlers) welcome(w http.ResponseWriter, r *http.Request) {
+	_, err := w.Write([]byte("welcome"))
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
 }
