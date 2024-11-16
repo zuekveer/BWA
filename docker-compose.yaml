@@ -29,6 +29,16 @@ services:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
 
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin4_container
+    restart: always
+    ports:
+      - '8888:80'
+    environment:
+      PGADMIN_DEFAULT_EMAIL: user-name@domain-name.com
+      PGADMIN_DEFAULT_PASSWORD: password
+
   migration:
     image: migrations
     build:
@@ -44,6 +54,27 @@ services:
     networks:
       - zkr-network
 
+  zookeeper:
+    image: confluentinc/cp-zookeeper:5.4.0
+    hostname: zookeeper
+    container_name: zookeeper
+    env_file:
+      - .env
+  kafka:
+    image: confluentinc/cp-kafka:5.3.0
+    hostname: kafka
+    container_name: kafka
+    env_file:
+      - .env
+    ports:
+      - "19092:19092"
+    depends_on:
+      - zookeeper
+    healthcheck:
+      test: nc -z localhost ${KAFKA_HEALTHCHECK_PORT} || exit -1
+      interval: 5s
+      timeout: 10s
+      retries: 10
 
 networks:
   zkr-network:
